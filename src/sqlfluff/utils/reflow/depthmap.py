@@ -22,14 +22,14 @@ class DepthInfo:
     stack_class_types: List[Set[str]]
 
     @classmethod
-    def from_raw_and_stack(cls, raw: RawSegment, stack: Sequence[BaseSegment]):
+    def from_raw_and_stack(cls, raw: RawSegment, stack: Sequence[PathStep]):
         """Construct from a raw and it's stack."""
-        stack_hashes = [hash(seg) for seg in stack]
+        stack_hashes = [hash(ps.segment) for ps in stack]
         return cls(
             stack_depth=len(stack),
             stack_hashes=stack_hashes,
             stack_hash_set=set(stack_hashes),
-            stack_class_types=[seg.class_types for seg in stack],
+            stack_class_types=[ps.segment.class_types for ps in stack],
         )
 
     def common_with(self, other: "DepthInfo") -> List[int]:
@@ -67,7 +67,7 @@ class DepthMap:
 
     """
 
-    def __init__(self, raws_with_stack: Sequence[Tuple[RawSegment, List[BaseSegment]]]):
+    def __init__(self, raws_with_stack: Sequence[Tuple[RawSegment, List[PathStep]]]):
         # TODO: decide whether we need the raw segments?
         # self.raw_segments = []
         self.depth_info = {}
@@ -97,8 +97,7 @@ class DepthMap:
         buff = []
         for raw in raw_segments:
             stack = root_segment.path_to(raw)
-            # Don't include the final element of the stack.
-            buff.append((raw, stack[:-1]))
+            buff.append((raw, stack))
         return cls(raws_with_stack=buff)
 
     def get_depth_info(self, raw: RawSegment):

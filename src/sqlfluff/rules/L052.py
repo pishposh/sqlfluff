@@ -121,9 +121,9 @@ class Rule_L052(BaseRule):
         # Find statement segment containing the current segment.
         statement_segment = next(
             (
-                s
-                for s in (parent_segment.path_to(segment) or [])
-                if s.is_type("statement")
+                ps.segment
+                for ps in (parent_segment.path_to(segment) or [])
+                if ps.segment.is_type("statement")
             ),
             None,
         )

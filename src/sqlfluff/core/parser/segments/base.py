@@ -78,6 +78,21 @@ class SourceFix:
         return hash((self.edit, self.source_slice.start, self.source_slice.stop))
 
 
+@dataclass()
+class PathStep:
+    """An element of the response to BaseSegment.path_to().
+
+    Attributes:
+        segment (:obj:`BaseSegment`): The segment in the chain.
+        idx (int): The index of the target within it's `segment`.
+        len (int): The number of childen `segment` has.
+    """
+
+    segment: "BaseSegment"
+    idx: int
+    len: int
+
+
 @dataclass
 class FixPatch:
     """An edit patch for a source file."""
@@ -456,18 +471,19 @@ class BaseSegment(metaclass=SegmentMetaclass):
         return self.get_raw_segments()
 
     @cached_property
-    def raw_segments_with_stack(self) -> List[Tuple["RawSegment", List["BaseSegment"]]]:
+    def raw_segments_with_stack(self) -> List[Tuple["RawSegment", List[PathStep]]]:
         """Returns a list of raw segments in this segment with the parents."""
         buffer = []
-        for seg in self.segments:
+        for idx, seg in enumerate(self.segments):
             # If it's a raw, yield it with this segment as the parent
+            new_step = [PathStep(self, idx, len(self.segments))]
             if seg.is_type("raw"):
-                buffer.append((seg, [self]))
+                buffer.append((seg, new_step))
             # If it's not, recurse - prepending self to the parent stack
             else:
                 buffer.extend(
                     [
-                        (raw_seg, [self] + stack)
+                        (raw_seg, new_step + stack)
                         for raw_seg, stack in seg.raw_segments_with_stack
                     ]
                 )
@@ -1084,33 +1100,40 @@ class BaseSegment(metaclass=SegmentMetaclass):
                         no_recursive_seg_type=no_recursive_seg_type,
                     )
 
-    def path_to(self, other):
+    def path_to(self, other) -> List[PathStep]:
         """Given a segment which is assumed within self, get the intermediate segments.
 
         Returns:
-            :obj:`list` of segments, including the segment we're looking for.
-            None if not found.
-
+            :obj:`list` of :obj:`PathStep`, not including the segment we're looking
+                for. If `other` is not found, then empty list. This includes if
+                called on self.
         """
         # Return self if we've found the segment.
         if self is other:
-            return [self]
+            return []
 
         # Are we in the right ballpark?
         # NB: Comparisons have a higher precedence than `not`.
         if not self.get_start_loc() <= other.get_start_loc() <= self.get_end_loc():
-            return None
+            return []
 
         # Do we have any child segments at all?
         if not self.segments:
-            return None
+            return []
 
         # Check through each of the child segments
-        for seg in self.segments:
+        for idx, seg in enumerate(self.segments):
+            step = PathStep(self, idx, len(self.segments))
+            # Have we found the target?
+            if seg is other:
+                return [step]
+            # Is there a path to the target?
             res = seg.path_to(other)
             if res:
-                return [self] + res
-        return None  # pragma: no cover
+                return [step] + res
+
+        # Not found.
+        return []  # pragma: no cover
 
     def parse(
         self,

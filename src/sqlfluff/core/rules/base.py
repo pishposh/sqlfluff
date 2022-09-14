@@ -771,9 +771,11 @@ class BaseRule:
         anchor: BaseSegment = segment
         child: BaseSegment = segment
         path: Optional[List[BaseSegment]] = (
-            root_segment.path_to(segment) if root_segment else None
+            [ps.segment for ps in root_segment.path_to(segment)]
+            if root_segment
+            else None
         )
-        inner_path: Optional[List[BaseSegment]] = path[1:-1] if path else None
+        inner_path: Optional[List[BaseSegment]] = path[1:] if path else None
         if inner_path:
             for seg in inner_path[::-1]:
                 # Which lists of children to check against.
