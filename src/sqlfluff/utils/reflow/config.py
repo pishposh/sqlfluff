@@ -44,6 +44,7 @@ class ReflowConfig:
             "spacing_before": "single",
             "spacing_after": "single",
             "spacing_within": None,
+            "line_position": None,
         }
         # Update with the config from any specific classes.
         # Unless someone is doing something complicated with their configuration
@@ -60,5 +61,8 @@ class ReflowConfig:
             )
             block_config["spacing_within"] = self._config_dict[seg_type].get(
                 "spacing_within", block_config["spacing_within"]
+            )
+            block_config["line_position"] = self._config_dict[seg_type].get(
+                "line_position", block_config["line_position"]
             )
         return block_config

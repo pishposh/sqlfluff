@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Set, Tuple, cast
 
 from sqlfluff.core.parser import BaseSegment, RawSegment
-from sqlfluff.core.parser.segments.raw import WhitespaceSegment
+from sqlfluff.core.parser.segments.raw import NewlineSegment, WhitespaceSegment
 from sqlfluff.core.rules.base import LintFix
 
 from sqlfluff.utils.reflow.config import ReflowConfig
@@ -37,6 +37,13 @@ class ReflowElement:
         """
         return self._class_types(self.segments)
 
+    def num_newlines(self) -> int:
+        """How many newlines does this element contain?"""
+        return sum(
+            bool(seg.class_types.intersection({"newline", "end_of_file"}))
+            for seg in self.segments
+        )
+
 
 @dataclass(frozen=True)
 class ReflowBlock(ReflowElement):
@@ -58,10 +65,15 @@ class ReflowBlock(ReflowElement):
     # - any:            don't enforce any spacing rules
     spacing_before: str
     spacing_after: str
+    # - None:           the default (no particular preference)
+    # - leading:        prefer newline before
+    # - trailing:       prefer newline after
+    line_position: Optional[str]
     # The depth info is used in determining where to put line breaks.
     depth_info: DepthInfo
     # This stores relevant configs for segments in the stack.
     stack_spacing_configs: Dict[int, str]
+    line_position_configs: Dict[int, str]
 
     @classmethod
     def from_config(cls, segments, config: ReflowConfig, depth_info: DepthInfo):
@@ -70,20 +82,28 @@ class ReflowBlock(ReflowElement):
         # Populate any spacing_within config.
         # TODO: This needs decent unit tests - not just what happens in rules.
         stack_spacing_configs = {}
+        line_position_configs = {}
         for hash, class_types in zip(
             depth_info.stack_hashes, depth_info.stack_class_types
         ):
             spacing_within = config.get_block_config(class_types).get(
                 "spacing_within", None
             )
+            line_position = config.get_block_config(class_types).get(
+                "line_position", None
+            )
             if spacing_within:
                 stack_spacing_configs[hash] = spacing_within
+            if line_position:
+                line_position_configs[hash] = line_position
         return cls(
             segments=segments,
             spacing_before=block_config.get("spacing_before", "single"),
             spacing_after=block_config.get("spacing_after", "single"),
+            line_position=block_config.get("line_position", None),
             depth_info=depth_info,
             stack_spacing_configs=stack_spacing_configs,
+            line_position_configs=line_position_configs,
         )
 
 
@@ -98,12 +118,106 @@ class ReflowPoint(ReflowElement):
     side.
     """
 
+    def _get_indent_segment(self) -> Optional[RawSegment]:
+        """Get the current indent segment (if there)."""
+        for seg in reversed(self.segments):
+            if seg.is_type("newline", "end_of_file"):
+                return None
+            elif seg.is_type("whitespace"):
+                return seg
+        return None
+
+    def get_indent(self) -> Optional[str]:
+        """Get the current indent (if there)."""
+        seg = self._get_indent_segment()
+        return seg.raw if seg else None
+
+    def indent_to(
+        self,
+        desired_indent: str,
+        after: Optional[BaseSegment] = None,
+        before: Optional[BaseSegment] = None,
+    ) -> Tuple[List[LintFix], "ReflowPoint"]:
+        """Coerce a point to have a particular indent.
+
+        If the point currently contains no newlines, one will
+        be introduced and any trailing whitespace will be effectively
+        removed.
+
+        More specifically, the newline is _inserted_ before the existing
+        whitespace, with the new indent being a replacement for that
+        same whitespace.
+        """
+        # Get the indent (or in the case of no newline, the last whitespace)
+        indent_seg = self._get_indent_segment()
+        if self.num_newlines():
+            # There is already a newline.
+            if indent_seg:
+                # Coerce existing indent to desired.
+                if indent_seg.raw == desired_indent:
+                    # trivial case. indent already correct
+                    return [], self
+                new_indent = indent_seg.edit(desired_indent)
+                idx = self.segments.index(indent_seg)
+                return [LintFix.replace(indent_seg, [new_indent])], ReflowPoint(
+                    list(self.segments[:idx])
+                    + [new_indent]
+                    + list(self.segments[idx + 1 :])
+                )
+            else:
+                # There is a newline, but no indent. Make one after the newline
+                idx = max(
+                    i for i, seg in enumerate(self.segments) if seg.is_type("newline")
+                )
+                new_indent = WhitespaceSegment(desired_indent)
+                return [
+                    LintFix.create_after(self.segments[idx], [new_indent])
+                ], ReflowPoint(
+                    list(self.segments[: idx + 1])
+                    + [new_indent]
+                    + list(self.segments[idx + 1 :])
+                )
+        else:
+            # There isn't currently a newline.
+            new_newline = NewlineSegment()
+            if not indent_seg:
+                # There isn't a whitespace segment either. We need to insert one.
+                # Do we have an anchor?
+                new_indent = WhitespaceSegment(desired_indent)
+                if not before and not after:
+                    raise NotImplementedError(
+                        "Not set up to handle empty points in this "
+                        "scenario without provided before/after "
+                        f"anchor: {self.segments}"
+                    )
+                # Otherwise make a new indent, attached to the relevant anchor.
+                elif before:
+                    fix = LintFix.create_before(before, [new_newline, new_indent])
+                else:
+                    assert after  # mypy hint
+                    fix = LintFix.create_after(after, [new_newline, new_indent])
+                new_point = ReflowPoint([new_newline, new_indent])
+            else:
+                # There is whitespace. Coerce it to the right indent and add
+                # a newline _before_
+                idx = self.segments.index(indent_seg)
+                new_indent = indent_seg.edit(desired_indent)
+                fix = LintFix.replace(indent_seg, [new_newline, new_indent])
+                new_point = ReflowPoint(
+                    list(self.segments[:idx])
+                    + [new_newline, new_indent]
+                    + list(self.segments[idx + 1 :])
+                )
+
+            return [fix], new_point
+
     def respace_point(
         self,
         prev_block: Optional[ReflowBlock] = None,
         next_block: Optional[ReflowBlock] = None,
         fixes: Optional[List[LintFix]] = None,
         strip_newlines: bool = False,
+        anchor_on: str = "before",
     ) -> Tuple[List[LintFix], "ReflowPoint"]:
         """Respace a point based on given constraints.
 
@@ -194,8 +308,8 @@ class ReflowPoint(ReflowElement):
                 segment_buffer.remove(ws)
                 new_fixes.append(LintFix("delete", ws))
 
-        # Is there a newline?
-        if self.class_types.intersection({"newline", "end_of_file"}):
+        # Is there a newline? (that we've not already stripped!)
+        if self.num_newlines() and not strip_newlines:
             # Most of this section should be handled as _Indentation_.
             # BUT: There is one case we should handle here.
             # If we find that the last whitespace has a newline
@@ -347,7 +461,8 @@ class ReflowPoint(ReflowElement):
                         reflow_logger.debug(
                             "    Not Detected existing fix. Creating new"
                         )
-                        if prev_block:
+                        # Take into account hint on where to anchor if given.
+                        if prev_block and anchor_on != "after":
                             new_fixes.append(
                                 LintFix(
                                     "create_after",
