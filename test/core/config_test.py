@@ -26,7 +26,9 @@ config_a = {
 
 config_b = {
     "core": {"rules": "L007", "dialect": "ansi"},
-    "rules": {"L007": {"operator_new_lines": "before"}},
+    "layout": {
+        "type": {"comma": {"line_position": "trailing", "spacing_before": "touch"}}
+    },
 }
 
 
@@ -96,10 +98,22 @@ def test__config__load_nested():
     }
 
 
+def test__config__iter_config_elems_from_dict():
+    """Test nested overwrite and order of precedence of config files."""
+    c = ConfigLoader._iter_config_elems_from_dict(
+        {"a": {"b": {"c": 123, "d": 456}, "f": 6}}
+    )
+    assert list(c) == [
+        (("a", "b", "c"), 123),
+        (("a", "b", "d"), 456),
+        (("a", "f"), 6),
+    ]
+
+
 def test__config__load_toml():
     """Test loading config from a pyproject.toml file."""
     c = ConfigLoader()
-    cfg = c.load_default_config_file(
+    cfg = c.load_config_file(
         os.path.join("test", "fixtures", "config", "toml"),
         "pyproject.toml",
     )
@@ -298,7 +312,10 @@ def test__config__get_section():
     cfg = FluffConfig(config_b)
 
     assert cfg.get_section("core").get("rules", None) == "L007"
-    assert cfg.get_section(["rules", "L007"]) == {"operator_new_lines": "before"}
+    assert cfg.get_section(["layout", "type", "comma"]) == {
+        "line_position": "trailing",
+        "spacing_before": "touch",
+    }
     assert cfg.get_section("non_existent") is None
 
 
@@ -310,11 +327,11 @@ def test__config__get():
     assert cfg.get("rulez") is None
     assert cfg.get("rulez", section="core", default=123) == 123
     assert (
-        cfg.get("operator_new_lines", section=["rules", "L007"], default=None)
-        == "before"
+        cfg.get("line_position", section=["layout", "type", "comma"], default=None)
+        == "trailing"
     )
     assert (
-        cfg.get("operator_new_lines", section=["rules", "ASDFSDG007"], default=None)
+        cfg.get("line_position", section=["layout", "type", "ASDFSDG007"], default=None)
         is None
     )
 
