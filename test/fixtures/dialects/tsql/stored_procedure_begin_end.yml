@@ -3,7 +3,7 @@
 # computed by SQLFluff when running the tests. Please run
 # `python test/generate_parse_fixture_yml.py`  to generate them after adding or
 # altering SQL files.
-_hash: bda275337a514353248e0a73540dcd239b19ae80144f7563bb385e709b301be6
+_hash: a4f4410f39418f9b21ed17d9f11214d4988fe0c38253e4fe377cfc4d73ae0f28
 file:
 - batch:
     create_procedure_statement:
@@ -211,8 +211,7 @@ file:
                     keyword: SET
                     parameter: '@v_nSysErrorNum'
                     assignment_operator:
-                      comparison_operator:
-                        raw_comparison_operator: '='
+                      raw_comparison_operator: '='
                     expression:
                       function:
                         function_name:
@@ -226,8 +225,7 @@ file:
                     keyword: SET
                     parameter: '@v_vchCode'
                     assignment_operator:
-                      comparison_operator:
-                        raw_comparison_operator: '='
+                      raw_comparison_operator: '='
                     expression:
                       function:
                         function_name:
@@ -241,8 +239,7 @@ file:
                     keyword: SET
                     parameter: '@v_vchMsg'
                     assignment_operator:
-                      comparison_operator:
-                        raw_comparison_operator: '='
+                      raw_comparison_operator: '='
                     expression:
                       quoted_literal: "N'Missing control type.'"
                     statement_terminator: ;
@@ -251,8 +248,7 @@ file:
                     keyword: SET
                     parameter: '@v_vchMsg'
                     assignment_operator:
-                      comparison_operator:
-                        raw_comparison_operator: '='
+                      raw_comparison_operator: '='
                     expression:
                     - parameter: '@v_vchMsg'
                     - binary_operator: +
