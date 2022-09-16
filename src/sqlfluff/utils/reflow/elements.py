@@ -44,6 +44,11 @@ class ReflowElement:
             for seg in self.segments
         )
 
+    @property
+    def raw(self):
+        """Return the raw string of the element."""
+        return "".join(seg.raw for seg in self.segments)
+
 
 @dataclass(frozen=True)
 class ReflowBlock(ReflowElement):
@@ -150,6 +155,12 @@ class ReflowPoint(ReflowElement):
         """
         # Get the indent (or in the case of no newline, the last whitespace)
         indent_seg = self._get_indent_segment()
+        reflow_logger.debug(
+            "Coercing indent %s to %r. (newlines: %s)",
+            indent_seg,
+            desired_indent,
+            self.num_newlines(),
+        )
         if self.num_newlines():
             # There is already a newline.
             if indent_seg:
@@ -199,13 +210,19 @@ class ReflowPoint(ReflowElement):
                 new_point = ReflowPoint([new_newline, new_indent])
             else:
                 # There is whitespace. Coerce it to the right indent and add
-                # a newline _before_
+                # a newline _before_. In the edge case that we're coercing to
+                # _no indent_, edit existing indent to be the newline and leave
+                # it there.
+                new_segs: List[RawSegment]
+                if desired_indent == "":
+                    new_segs = [new_newline]
+                else:
+                    new_segs = [new_newline, indent_seg.edit(desired_indent)]
                 idx = self.segments.index(indent_seg)
-                new_indent = indent_seg.edit(desired_indent)
-                fix = LintFix.replace(indent_seg, [new_newline, new_indent])
+                fix = LintFix.replace(indent_seg, new_segs)
                 new_point = ReflowPoint(
                     list(self.segments[:idx])
-                    + [new_newline, new_indent]
+                    + new_segs
                     + list(self.segments[idx + 1 :])
                 )
 

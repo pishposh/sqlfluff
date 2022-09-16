@@ -206,11 +206,11 @@ class ReflowSequence:
         segments = all_raws[pre_idx:post_idx]
         reflow_logger.debug(
             "Generating ReflowSequence.from_around_target(). idx: %s. "
-            "slice: %s:%s. segments: %s",
+            "slice: %s:%s. raw: %r",
             initial_idx,
             pre_idx,
             post_idx,
-            segments,
+            "".join(seg.raw for seg in segments),
         )
         return cls.from_raw_segments(segments, root_segment, config=config)
 
@@ -580,13 +580,13 @@ class ReflowSequence:
         ) in wide_spans:
 
             reflow_logger.debug(
-                "Handing Rebreak Span (%r: %s): %s",
+                "Handing Rebreak Span (%r: %s): %r",
                 line_position,
                 target,
-                [
-                    [seg.raw for seg in elem.segments]
+                "".join(
+                    elem.raw
                     for elem in elem_buff[prev_code_pt_idx - 1 : next_code_pt_idx + 2]
-                ],
+                ),
             )
 
             # 2. Points and blocks either side are just offsets from the indices.
@@ -640,7 +640,7 @@ class ReflowSequence:
                     next_point_idx == next_code_pt_idx
                     and elem_buff[next_nl_idx].num_newlines() == 1
                 ):
-                    reflow_logger.debug("  Leading Easy Case")
+                    reflow_logger.debug("  Trailing Easy Case")
                     # Simple case. No comments.
                     # Strip newlines from the next point. Apply the indent to
                     # the previous point.
@@ -657,7 +657,7 @@ class ReflowSequence:
                     elem_buff[prev_point_idx] = prev_point
                     elem_buff[next_point_idx] = next_point
                 else:
-                    reflow_logger.debug("  Leading Tricky Case")
+                    reflow_logger.debug("  Trailing Tricky Case")
                     # Otherwise we've got a tricky scenario where there are comments
                     # to negotiate around. In this case, we _move the target_
                     # rather than just adjusting the whitespace.
@@ -702,7 +702,7 @@ class ReflowSequence:
                     prev_point_idx == prev_code_pt_idx
                     and elem_buff[prev_nl_idx].num_newlines() == 1
                 ):
-                    reflow_logger.debug("  Trailing Easy Case")
+                    reflow_logger.debug("  Leading Easy Case")
                     # Simple case. No comments.
                     # Strip newlines from the previous point. Apply the indent
                     # to the next point.
@@ -719,7 +719,7 @@ class ReflowSequence:
                     elem_buff[prev_point_idx] = prev_point
                     elem_buff[next_point_idx] = next_point
                 else:
-                    reflow_logger.debug("  Trailing Tricky Case")
+                    reflow_logger.debug("  Leading Tricky Case")
                     # Otherwise we've got a tricky scenario where there are comments
                     # to negotiate around. In this case, we _move the target_
                     # rather than just adjusting the whitespace.

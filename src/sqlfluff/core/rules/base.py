@@ -236,8 +236,9 @@ class LintFix:
                 detail = f"create:{new_detail!r}"
         else:
             detail = ""  # pragma: no cover TODO?
-        return "<LintFix: {} @{} {}>".format(
-            self.edit_type, self.anchor.pos_marker, detail
+        return (
+            f"<LintFix: {self.edit_type} {self.anchor.get_type()}"
+            f"@{self.anchor.pos_marker} {detail}>"
         )
 
     def __eq__(self, other):
@@ -775,30 +776,42 @@ class BaseRule:
             if root_segment
             else None
         )
-        inner_path: Optional[List[BaseSegment]] = path[1:] if path else None
-        if inner_path:
-            for seg in inner_path[::-1]:
-                # Which lists of children to check against.
-                children_lists: List[List[BaseSegment]] = []
-                if filter_meta:
-                    # Optionally check against filtered (non-meta only) children.
-                    children_lists.append(
-                        [child for child in seg.segments if not child.is_meta]
+        assert path
+        for seg in path[::-1]:
+            # If the segment allows non code ends, then no problem.
+            # We're done. This is usually the outer file segment.
+            if seg.can_start_end_non_code:
+                linter_logger.debug(
+                    "Stopping hoist at %s, as allows non code ends.", seg
+                )
+                break
+            # Which lists of children to check against.
+            children_lists: List[List[BaseSegment]] = []
+            if filter_meta:
+                # Optionally check against filtered (non-meta only) children.
+                children_lists.append(
+                    [child for child in seg.segments if not child.is_meta]
+                )
+            # Always check against the full set of children.
+            children_lists.append(seg.segments)
+            children: List[BaseSegment]
+            for children in children_lists:
+                if edit_type == "create_before" and children[0] is child:
+                    linter_logger.debug(
+                        "Hoisting anchor from before %s to %s", anchor, seg
                     )
-                # Always check against the full set of children.
-                children_lists.append(seg.segments)
-                children: List[BaseSegment]
-                for children in children_lists:
-                    if edit_type == "create_before" and children[0] is child:
-                        anchor = seg
-                        assert anchor.raw.startswith(segment.raw)
-                        child = seg
-                        break
-                    elif edit_type == "create_after" and children[-1] is child:
-                        anchor = seg
-                        assert anchor.raw.endswith(segment.raw)
-                        child = seg
-                        break
+                    anchor = seg
+                    assert anchor.raw.startswith(segment.raw)
+                    child = seg
+                    break
+                elif edit_type == "create_after" and children[-1] is child:
+                    linter_logger.debug(
+                        "Hoisting anchor from after %s to %s", anchor, seg
+                    )
+                    anchor = seg
+                    assert anchor.raw.endswith(segment.raw)
+                    child = seg
+                    break
         return anchor
 
     @staticmethod

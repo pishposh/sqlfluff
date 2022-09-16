@@ -7,7 +7,7 @@ import configparser
 
 import pluggy
 from itertools import chain
-from typing import Dict, Iterator, List, Sequence, Tuple, Any, Optional, Union, Iterable
+from typing import Dict, Iterator, List, Tuple, Any, Optional, Union, Iterable
 from pathlib import Path
 from sqlfluff.core.plugin.host import get_plugin_manager
 from sqlfluff.core.errors import SQLFluffUserError

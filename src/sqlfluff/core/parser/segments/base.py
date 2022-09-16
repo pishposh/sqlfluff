@@ -1530,7 +1530,7 @@ class BaseSegment(metaclass=SegmentMetaclass):
 
         # If we're here, the segment doesn't match the original.
         linter_logger.debug(
-            "%s at %s: Original: [%r] Fixed: [%r]",
+            "# Changed Segment Found: %s at %s: Original: [%r] Fixed: [%r]",
             type(self).__name__,
             self.pos_marker.templated_slice,
             templated_raw,
