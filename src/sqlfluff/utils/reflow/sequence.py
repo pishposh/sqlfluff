@@ -379,7 +379,7 @@ class ReflowSequence:
                     post = cast(ReflowBlock, self.elements[idx + 1])
                 yield elem, pre, post
 
-    def respace(self, strip_newlines=False, filter="all") -> "ReflowSequence":
+    def respace(self, strip_newlines: bool=False, filter: str="all") -> "ReflowSequence":
         """Respace a sequence.
 
         Args:
