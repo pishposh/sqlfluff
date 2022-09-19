@@ -118,7 +118,7 @@ class DepthMap:
         """Copy the depth info for one segment and apply to another.
 
         This mutates the existing depth map. That's ok because it's
-        an idempotent and uuids should be unique.
+        an idempotent operation and uuids should be unique.
 
         This is used in edits to a reflow sequence when new segments are
         inserted and can't infer their own depth info.
