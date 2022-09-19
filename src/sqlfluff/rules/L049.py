@@ -51,7 +51,7 @@ class Rule_L049(BaseRule):
         # https://stackoverflow.com/questions/9581745/sql-is-null-and-null
 
         # Allow assignments in SET clauses
-        if context.parent_stack and context.parent_stack[-2].is_type(
+        if len(context.parent_stack) >= 2 and context.parent_stack[-2].is_type(
             "set_clause_list", "execute_script_statement"
         ):
             return None
