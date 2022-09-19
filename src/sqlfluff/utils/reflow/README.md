@@ -57,7 +57,7 @@ how widespread the impact we want to have is:
   but may also optionally need to resolve excessive _Line Length_.
 - A rule designed around the placement or presence of _Line Breaks_
   will probably have to consider _Spacing_ (or at least decide
-  what spacing to impose at least for the moved elements) and if
+  what spacing to impose for the moved elements) and if
   introducing additional _Line Breaks_ it may need to account
   for _Indentation_.
 - Resolving _Line Length_ will involve introducing additional
