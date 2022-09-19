@@ -101,7 +101,7 @@ class DepthMap:
             buff.append((raw, stack[:-1]))
         return cls(raws_with_stack=buff)
 
-    def get_depth_info(self, raw: RawSegment):
+    def get_depth_info(self, raw: RawSegment) -> DepthInfo:
         """Get the depth info for a given segment."""
         try:
             return self.depth_info[raw.uuid]
