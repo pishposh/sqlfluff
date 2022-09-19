@@ -82,7 +82,7 @@ class DepthMap:
         NOTE: This is the most efficient way to construct a DepthMap
         due to caching in the BaseSegment.
         """
-        return cls(raws_with_stack=parent.raw_segments_with_stack)
+        return cls(raws_with_stack=parent.raw_segments_with_ancestors)
 
     @classmethod
     def from_raws_and_root(
