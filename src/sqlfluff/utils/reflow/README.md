@@ -86,7 +86,7 @@ As a rule of thumb:
   _Indentation_ and _Line Breaks_.
   - This should use a more fully featured `.reflow()` method which
     can use `.reindent()` and others under the hood, but limited
-    only to reflowing the offending line itself (TBC whether in
+    only to reflowing the offending line itself (TBD whether in
     in practice this needs to be broader).
 
 ### What about non-reflow rules?
