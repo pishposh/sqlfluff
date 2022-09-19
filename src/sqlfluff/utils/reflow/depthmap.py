@@ -1,4 +1,4 @@
-"""The DepthMap class which is an enriched sequence of raw segments."""
+"""The DepthMap class is an enriched sequence of raw segments."""
 
 import logging
 from dataclasses import dataclass
