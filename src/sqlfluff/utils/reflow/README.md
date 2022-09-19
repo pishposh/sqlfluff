@@ -53,7 +53,7 @@ When applying reflow in a rule context it makes sense to consider
 how widespread the impact we want to have is:
 - A rule designed around _Spacing_ may act in relative isolation,
   but may also optionally need to resolve excessive _Line Length_.
-- A rule designed around _Indentation_ may act simply on it's own
+- A rule designed around _Indentation_ may act simply on its own
   but may also optionally need to resolve excessive _Line Length_.
 - A rule designed around the placement or presence of _Line Breaks_
   will probably have to consider _Spacing_ (or at least decide
