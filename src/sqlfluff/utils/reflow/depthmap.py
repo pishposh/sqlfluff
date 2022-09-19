@@ -23,7 +23,7 @@ class DepthInfo:
 
     @classmethod
     def from_raw_and_stack(cls, raw: RawSegment, stack: Sequence[BaseSegment]):
-        """Construct from a raw and it's stack."""
+        """Construct from a raw and its stack."""
         stack_hashes = [hash(seg) for seg in stack]
         return cls(
             stack_depth=len(stack),
