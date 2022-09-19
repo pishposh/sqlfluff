@@ -77,7 +77,7 @@ As a rule of thumb:
   existing _Indentation_ and not reset that or consider any
   _Line Length_ issues. We **should** consider _Spacing_, but
   only around the elements moved (e.g. if we're shifting a trailing
-  comma to be a leading one, then we should also correct it's spacing
+  comma to be a leading one, then we should also correct its spacing
   at the same time).
   - This means in practice we should move the _Segment_ and not
     move the _Line Break_. Once moved, we should use the `.respace()`
