@@ -344,7 +344,7 @@ class ReflowSequence:
         # than do surgery on the elements.
 
         # TODO: The surgery is actually a good idea for long sequences now that
-        # we have the handle the depth map.
+        # we have the depth map.
 
         current_raws = list(
             chain.from_iterable(elem.segments for elem in self.elements)
