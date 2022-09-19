@@ -319,7 +319,7 @@ class ReflowSequence:
     def replace(
         self, target: BaseSegment, edit: Sequence[BaseSegment]
     ) -> "ReflowSequence":
-        """Returns a new reflow sequence elements replaced."""
+        """Returns a new reflow sequence with `edit` elements replaced."""
         replace_fix = LintFix.replace(target, edit)
 
         target_raws = target.raw_segments
