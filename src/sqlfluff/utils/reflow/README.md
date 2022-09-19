@@ -165,7 +165,7 @@ could live in two places:
    file just for this purpose.
 
 Given user requirements to be able to configure at least comma placement
-the config file approach seems the most suitable - as it allows sensible
+in the config file approach seems the most suitable - as it allows sensible
 inheritance and deviation from a default spacing configuration.
 
 ### More specifically...
