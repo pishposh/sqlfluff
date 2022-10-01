@@ -63,6 +63,12 @@ def get_select_statement_info(
             for seg in join_clause.iter_segments():
                 if seg.is_type("keyword") and seg.raw_upper == "USING":
                     seen_using = True
+                # elif seg.is_type("from_expression_element"):
+                #     for from_seg in seg.segments:
+                #         if from_seg.is_type("table_expression"):
+                #             reference_buffer += list(
+                #                 seg.recursive_crawl("object_reference")
+                #             )
                 elif seg.is_type("join_on_condition"):
                     for on_seg in seg.segments:
                         if on_seg.is_type("bracketed", "expression"):

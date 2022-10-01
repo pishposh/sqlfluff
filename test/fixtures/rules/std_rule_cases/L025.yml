@@ -337,3 +337,29 @@ test_pass_derived_query_requires_alias_3:
         )
         SELECT * FROM foo
     ) AS a
+
+
+# test_pass_correlated_join_alias_1:
+#   # alias is only used in the table expression segment of a join
+#   pass_str: |
+#     SELECT
+#         argh,
+#         m.blargh
+#     FROM my_table AS t
+#     CROSS JOIN t.array_field AS m
+
+# test_pass_correlated_join_alias_2:
+#   pass_str: |
+#     SELECT st.field_1
+#     FROM my_table AS mt
+#     CROSS JOIN (
+#             SELECT blah
+#             FROM other_table
+#             WHERE field_2 = mt.field_2
+#         ) AS st
+
+test_pass_implicit_unnesting:
+  pass_str: |
+    SELECT m.ai
+    FROM my_table AS m
+    CROSS JOIN m.arr AS ai
